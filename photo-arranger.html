@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Arranger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f7f5;
+      --panel: #ffffff;
+      --border: #e4e2de;
+      --text: #1a1916;
+      --muted: #9a9690;
+      --accent: #1a1916;
+      --gap: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 32px 40px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.7rem; }
+    header p { font-size: 0.78rem; color: var(--muted); max-width: 500px; line-height: 1.7; }
+
+    .toolbar {
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .btn {
+      font-family: 'Jost', sans-serif;
+      font-weight: 400;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 9px 18px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #eee; }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: #333; }
+    .btn-label {
+      font-family: 'Jost', sans-serif;
+      font-weight: 400;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 9px 18px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-block;
+    }
+    .btn-label:hover { background: #eee; }
+    #fileInput { display: none; }
+
+    .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .count-badge { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.08em; }
+
+    #loadingBar {
+      display: none;
+      padding: 10px 40px;
+      background: #fdf6ea;
+      border-bottom: 1px solid #e8d8a0;
+      font-size: 0.78rem;
+      color: #7a6010;
+      gap: 16px;
+      align-items: center;
+    }
+    #loadingBar.visible { display: flex; }
+    .progress-track { flex: 1; max-width: 200px; height: 2px; background: #e8d8a0; }
+    .progress-fill { height: 100%; background: #8a6520; transition: width 0.15s; width: 0%; }
+
+    .workspace { padding: 24px 40px 60px; }
+
+    /* ── DROP ZONE ── */
+    #dropZone {
+      border: 2px dashed var(--border);
+      padding: 80px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #dropZone.drag-over { border-color: var(--accent); background: #f0eeea; }
+    #dropZone h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.4rem; margin-bottom: 10px; }
+    #dropZone p { font-size: 0.78rem; color: var(--muted); line-height: 1.8; }
+
+    /* ── HINT BAR ── */
+    .hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hint strong { color: var(--text); font-weight: 400; }
+
+    /* ── 3-COLUMN MASONRY PREVIEW ── */
+    /* This mirrors exactly how the portfolio site renders:
+       column 1 fills top-to-bottom, then col 2, then col 3.
+       Photos are distributed into columns by index: 0,3,6... / 1,4,7... / 2,5,8... */
+
+    #masonry {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      align-items: start;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      min-height: 200px;
+      position: relative;
+    }
+
+    /* Drop target highlight on the column itself when empty */
+    .col.col-drag-over {
+      outline: 2px dashed var(--accent);
+      outline-offset: 4px;
+    }
+
+    /* ── THUMB ── */
+    .thumb {
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      background: #e8e6e2;
+      will-change: transform;
+      transition: opacity 0.15s;
+      /* No fixed aspect ratio — show natural proportions like the real site */
+    }
+    .thumb:active { cursor: grabbing; }
+    .thumb.dragging { opacity: 0.25; }
+
+    .thumb-img {
+      width: 100%;
+      display: block;
+      /* height is natural — matches masonry behaviour */
+    }
+
+    .thumb .num {
+      position: absolute;
+      top: 8px; left: 8px;
+      background: rgba(26,25,22,0.75);
+      color: #fff;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      padding: 3px 7px;
+      pointer-events: none;
+      z-index: 2;
+      line-height: 1.4;
+    }
+
+    /* sequence number shown in top-left = position in final array (1-based) */
+    .thumb .seq {
+      position: absolute;
+      top: 8px; right: 8px;
+      background: rgba(255,255,255,0.85);
+      color: var(--text);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      padding: 2px 6px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .thumb .remove-btn {
+      position: absolute;
+      bottom: 8px; right: 8px;
+      width: 24px; height: 24px;
+      background: rgba(26,25,22,0.65);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 0.9rem;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      z-index: 2;
+    }
+    .thumb:hover .remove-btn { display: flex; }
+    .thumb .remove-btn:hover { background: rgba(180,40,40,0.85); }
+
+    /* ── INSERTION LINE between thumbs in a column ── */
+    .thumb.insert-before::before,
+    .thumb.insert-after::after {
+      content: '';
+      position: absolute;
+      left: -2px; right: -2px;
+      height: 3px;
+      background: var(--accent);
+      z-index: 20;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .thumb.insert-before::before { top: -5px; }
+    .thumb.insert-after::after   { bottom: -5px; }
+
+    /* ── OUTPUT ── */
+    #outputPanel { display: none; margin-top: 40px; border: 1px solid var(--border); background: var(--panel); }
+    #outputPanel.visible { display: block; }
+
+    .output-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .output-header h3 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.05rem; }
+    .output-header p { font-size: 0.74rem; color: var(--muted); max-width: 500px; line-height: 1.6; }
+
+    #codeOutput {
+      display: block; width: 100%;
+      padding: 24px 28px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem; line-height: 1.7;
+      color: var(--text); background: #faf9f7;
+      border: none; resize: vertical; min-height: 220px; outline: none;
+    }
+
+    .copy-success { font-size: 0.72rem; color: #4a7c59; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; transition: opacity 0.3s; }
+    .copy-success.show { opacity: 1; }
+
+    .instructions { margin-top: 32px; padding: 24px 28px; border: 1px dashed var(--border); background: var(--panel); }
+    .instructions h3 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.05rem; margin-bottom: 12px; }
+    .instructions ol { padding-left: 20px; font-size: 0.8rem; line-height: 2.1; color: #555; }
+    .instructions code { background: #f0eeea; padding: 1px 6px; font-family: 'Courier New', monospace; font-size: 0.76rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div><h1>Photo Arranger</h1></div>
+  <p>Arrange your photos in the three columns below — what you see here is <strong>exactly</strong> how they'll appear on your portfolio site. Drag within or between columns to reorder.</p>
+</header>
+
+<div class="toolbar">
+  <label class="btn-label" for="fileInput">+ Add photos</label>
+  <input type="file" id="fileInput" multiple accept="image/*" />
+  <button class="btn" id="clearBtn">Clear all</button>
+  <div class="toolbar-right">
+    <span class="count-badge" id="countBadge">0 photos</span>
+    <button class="btn-primary" id="generateBtn">Generate code ↓</button>
+  </div>
+</div>
+
+<div id="loadingBar">
+  <span id="loadingProgress">Loading…</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="workspace">
+
+  <div id="dropZone">
+    <h2>Drop your photos here</h2>
+    <p>Or click <strong>+ Add photos</strong> above<br />
+    Photos will be arranged into 3 columns matching your portfolio layout<br />
+    <span style="color:#bbb;font-size:0.72rem;">JPEG, WebP, PNG · files stay on your computer, nothing is uploaded</span></p>
+  </div>
+
+  <div id="masonryWrap" style="display:none;">
+    <div class="hint">
+      <span>The <strong>white number</strong> (top-left) = column position &nbsp;·&nbsp; The <strong>dark number</strong> (top-right) = sequence in final array &nbsp;·&nbsp; Drag photos within or between columns to reorder</span>
+    </div>
+    <div id="masonry">
+      <div class="col" id="col-0" data-col="0"></div>
+      <div class="col" id="col-1" data-col="1"></div>
+      <div class="col" id="col-2" data-col="2"></div>
+    </div>
+  </div>
+
+  <div id="outputPanel">
+    <div class="output-header">
+      <div>
+        <h3>Your PHOTOS array code</h3>
+        <p>Copy everything below and paste it to replace the <code>const PHOTOS = [...]</code> section in your <code>index.html</code>.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <span class="copy-success" id="copySuccess">Copied!</span>
+        <button class="btn-primary" id="copyBtn">Copy code</button>
+      </div>
+    </div>
+    <textarea id="codeOutput" readonly spellcheck="false"></textarea>
+  </div>
+
+  <div class="instructions" id="howTo" style="display:none;">
+    <h3>How to use this code</h3>
+    <ol>
+      <li>Open your <code>index.html</code> in a text editor or on GitHub</li>
+      <li>Find the line that starts with <code>const PHOTOS = [</code></li>
+      <li>Select from that line down to the closing <code>];</code></li>
+      <li>Paste the copied code to replace it</li>
+      <li>Save — your gallery will now display in this order</li>
+    </ol>
+  </div>
+
+</div>
+
+<script>
+  // ── How masonry column ordering works ────────────────────────────────────
+  // The portfolio uses CSS `columns: 3` which fills col 1 top→bottom, then
+  // col 2, then col 3. So a flat array [0,1,2,3,4,5,6,7,8] renders as:
+  //   Col 1: 0, 3, 6
+  //   Col 2: 1, 4, 7
+  //   Col 3: 2, 5, 8
+  //
+  // This arranger stores photos in 3 separate column arrays.
+  // When generating code, it interleaves them back:
+  //   col0[0], col1[0], col2[0], col0[1], col1[1], col2[1]...
+  // So the flat array, when rendered by masonry, shows exactly what you arranged.
+
+  const THUMB_SIZE    = 600;
+  const THUMB_QUALITY = 0.92;
+  const NUM_COLS      = 3;
+
+  // cols[0], cols[1], cols[2] — each is an array of { filename, thumb }
+  let cols = [[], [], []];
+
+  let dragItem   = null; // { colIndex, itemIndex }
+  let insertTarget = null; // { colIndex, itemIndex, position: 'before'|'after' }
+
+  const fileInput    = document.getElementById('fileInput');
+  const dropZone     = document.getElementById('dropZone');
+  const masonryWrap  = document.getElementById('masonryWrap');
+  const clearBtn     = document.getElementById('clearBtn');
+  const generateBtn  = document.getElementById('generateBtn');
+  const copyBtn      = document.getElementById('copyBtn');
+  const codeOutput   = document.getElementById('codeOutput');
+  const outputPanel  = document.getElementById('outputPanel');
+  const countBadge   = document.getElementById('countBadge');
+  const copySuccess  = document.getElementById('copySuccess');
+  const howTo        = document.getElementById('howTo');
+  const loadingBar   = document.getElementById('loadingBar');
+  const loadingProg  = document.getElementById('loadingProgress');
+  const progressFill = document.getElementById('progressFill');
+
+  // ── Thumbnail generator ───────────────────────
+  function generateThumb(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const scale  = THUMB_SIZE / Math.max(img.width, img.height);
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', THUMB_QUALITY), w: canvas.width, h: canvas.height });
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // ── File loading ──────────────────────────────
+  fileInput.addEventListener('change', e => loadFiles(e.target.files));
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    loadFiles(e.dataTransfer.files);
+  });
+
+  async function loadFiles(files) {
+    const imageFiles = [...files].filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) return;
+
+    loadingBar.classList.add('visible');
+    let done = 0;
+    const total = imageFiles.length;
+    loadingProg.textContent = `Loading 0 / ${total}`;
+    progressFill.style.width = '0%';
+
+    // Collect all new photos first, then distribute into columns
+    const newPhotos = [];
+    const BATCH = 3;
+    for (let i = 0; i < imageFiles.length; i += BATCH) {
+      const batch = imageFiles.slice(i, i + BATCH);
+      await Promise.all(batch.map(async file => {
+        const { dataUrl } = await generateThumb(file);
+        newPhotos.push({ filename: file.name, thumb: dataUrl });
+        done++;
+        loadingProg.textContent = `Loading ${done} / ${total}`;
+        progressFill.style.width = Math.round((done / total) * 100) + '%';
+      }));
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    // Distribute new photos into columns round-robin (matching masonry order)
+    // Existing photos stay where they are; new ones appended
+    const existingCount = cols[0].length + cols[1].length + cols[2].length;
+    newPhotos.forEach((photo, i) => {
+      const colIndex = (existingCount + i) % NUM_COLS;
+      cols[colIndex].push(photo);
+    });
+
+    loadingBar.classList.remove('visible');
+    progressFill.style.width = '0%';
+    renderAll();
+  }
+
+  function totalPhotos() {
+    return cols[0].length + cols[1].length + cols[2].length;
+  }
+
+  function titleFromFilename(name) {
+    return name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // ── Render ────────────────────────────────────
+  function renderAll() {
+    const total = totalPhotos();
+    if (total === 0) {
+      masonryWrap.style.display = 'none';
+      dropZone.style.display = '';
+      updateCount();
+      return;
+    }
+
+    dropZone.style.display = 'none';
+    masonryWrap.style.display = '';
+
+    // Compute global sequence numbers
+    // Interleave: col0[0], col1[0], col2[0], col0[1], col1[1], col2[1]...
+    // seq[colIndex][itemIndex] = 1-based position in final PHOTOS array
+    const maxRows = Math.max(cols[0].length, cols[1].length, cols[2].length);
+    const seqMap = [[], [], []]; // seqMap[col][row] = sequence number
+    let seq = 1;
+    for (let row = 0; row < maxRows; row++) {
+      for (let col = 0; col < NUM_COLS; col++) {
+        if (row < cols[col].length) {
+          seqMap[col][row] = seq++;
+        }
+      }
+    }
+
+    for (let c = 0; c < NUM_COLS; c++) {
+      const colEl = document.getElementById(`col-${c}`);
+      colEl.innerHTML = '';
+      const frag = document.createDocumentFragment();
+
+      cols[c].forEach((photo, i) => {
+        const el = document.createElement('div');
+        el.className = 'thumb';
+        el.draggable = true;
+        el.dataset.col = c;
+        el.dataset.idx = i;
+
+        const img = document.createElement('img');
+        img.className = 'thumb-img';
+        img.src = photo.thumb;
+        img.alt = photo.filename;
+
+        const num = document.createElement('span');
+        num.className = 'num';
+        num.textContent = `${i + 1}`;
+
+        const seqEl = document.createElement('span');
+        seqEl.className = 'seq';
+        seqEl.textContent = `#${seqMap[c][i]}`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&#215;';
+        removeBtn.title = 'Remove';
+        removeBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          cols[c].splice(i, 1);
+          renderAll();
+          outputPanel.classList.remove('visible');
+          howTo.style.display = 'none';
+        });
+
+        el.appendChild(img);
+        el.appendChild(num);
+        el.appendChild(seqEl);
+        el.appendChild(removeBtn);
+
+        el.addEventListener('dragstart', onDragStart);
+        el.addEventListener('dragover',  onDragOver);
+        el.addEventListener('dragleave', onDragLeave);
+        el.addEventListener('drop',      onDrop);
+        el.addEventListener('dragend',   onDragEnd);
+
+        frag.appendChild(el);
+      });
+
+      colEl.appendChild(frag);
+
+      // Column-level drop (for dropping into an empty column or at the end)
+      colEl.addEventListener('dragover', onColDragOver);
+      colEl.addEventListener('dragleave', onColDragLeave);
+      colEl.addEventListener('drop', onColDrop);
+    }
+
+    updateCount();
+  }
+
+  function updateCount() {
+    const t = totalPhotos();
+    countBadge.textContent = `${t} photo${t !== 1 ? 's' : ''}`;
+  }
+
+  // ── Drag & drop ───────────────────────────────
+  function onDragStart(e) {
+    dragItem = {
+      colIndex: Number(e.currentTarget.dataset.col),
+      itemIndex: Number(e.currentTarget.dataset.idx)
+    };
+    requestAnimationFrame(() => e.currentTarget.classList.add('dragging'));
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function onDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation(); // prevent column handler firing too
+    e.dataTransfer.dropEffect = 'move';
+
+    const target = e.currentTarget;
+    const targetCol = Number(target.dataset.col);
+    const targetIdx = Number(target.dataset.idx);
+    const rect = target.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const before = e.clientY < midpoint;
+
+    clearInsertIndicators();
+    insertTarget = { colIndex: targetCol, itemIndex: targetIdx, position: before ? 'before' : 'after' };
+
+    // Don't show indicator if it wouldn't move anything
+    if (dragItem &&
+        dragItem.colIndex === targetCol &&
+        ((before && dragItem.itemIndex === targetIdx) ||
+         (!before && dragItem.itemIndex === targetIdx) ||
+         (before && dragItem.itemIndex === targetIdx - 1) ||
+         (!before && dragItem.itemIndex === targetIdx + 1))) {
+      insertTarget = null;
+      return;
+    }
+
+    target.classList.add(before ? 'insert-before' : 'insert-after');
+  }
+
+  function onDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      e.currentTarget.classList.remove('insert-before', 'insert-after');
+    }
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragItem || !insertTarget) { cleanup(); return; }
+
+    const { colIndex: fromCol, itemIndex: fromIdx } = dragItem;
+    const { colIndex: toCol, itemIndex: toIdx, position } = insertTarget;
+
+    // Remove from source
+    const moved = cols[fromCol].splice(fromIdx, 1)[0];
+
+    // Adjust target index if same column and removing shifted things
+    let adjustedIdx = toIdx;
+    if (fromCol === toCol && fromIdx < toIdx) adjustedIdx--;
+
+    // Insert at correct position
+    const insertAt = position === 'before' ? adjustedIdx : adjustedIdx + 1;
+    cols[toCol].splice(Math.max(0, insertAt), 0, moved);
+
+    cleanup();
+    renderAll();
+    outputPanel.classList.remove('visible');
+    howTo.style.display = 'none';
+  }
+
+  // Column-level drag handlers (handles dropping at end of column or into empty column)
+  function onColDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('col-drag-over');
+    insertTarget = { colIndex: Number(e.currentTarget.dataset.col), itemIndex: -1, position: 'end' };
+  }
+
+  function onColDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      e.currentTarget.classList.remove('col-drag-over');
+    }
+  }
+
+  function onColDrop(e) {
+    e.preventDefault();
+    if (!dragItem || !insertTarget || insertTarget.position !== 'end') { cleanup(); return; }
+
+    const { colIndex: fromCol, itemIndex: fromIdx } = dragItem;
+    const toCol = insertTarget.colIndex;
+
+    const moved = cols[fromCol].splice(fromIdx, 1)[0];
+    cols[toCol].push(moved);
+
+    cleanup();
+    renderAll();
+    outputPanel.classList.remove('visible');
+    howTo.style.display = 'none';
+  }
+
+  function onDragEnd(e) {
+    cleanup();
+  }
+
+  function cleanup() {
+    clearInsertIndicators();
+    document.querySelectorAll('.col').forEach(c => c.classList.remove('col-drag-over'));
+    dragItem = null;
+    insertTarget = null;
+  }
+
+  function clearInsertIndicators() {
+    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('insert-before', 'insert-after'));
+  }
+
+  // ── Clear ─────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    if (totalPhotos() && !confirm('Remove all photos?')) return;
+    cols = [[], [], []];
+    renderAll();
+    outputPanel.classList.remove('visible');
+    howTo.style.display = 'none';
+  });
+
+  // ── Generate code ─────────────────────────────
+  // Interleave columns: col0[0], col1[0], col2[0], col0[1], col1[1], col2[1]...
+  generateBtn.addEventListener('click', () => {
+    if (!totalPhotos()) { alert('Add some photos first!'); return; }
+
+    const maxRows = Math.max(cols[0].length, cols[1].length, cols[2].length);
+    const flat = [];
+    for (let row = 0; row < maxRows; row++) {
+      for (let col = 0; col < NUM_COLS; col++) {
+        if (row < cols[col].length) flat.push(cols[col][row]);
+      }
+    }
+
+    const lines = flat.map(p =>
+      `  { src: "images/${p.filename}", title: "${titleFromFilename(p.filename)}", category: "general" }`
+    );
+    codeOutput.value = `const PHOTOS = [\n${lines.join(',\n')}\n];`;
+    outputPanel.classList.add('visible');
+    howTo.style.display = '';
+    outputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // ── Copy ──────────────────────────────────────
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(codeOutput.value).then(() => {
+      copySuccess.classList.add('show');
+      setTimeout(() => copySuccess.classList.remove('show'), 2000);
+    }).catch(() => {
+      codeOutput.select();
+      document.execCommand('copy');
+      copySuccess.classList.add('show');
+      setTimeout(() => copySuccess.classList.remove('show'), 2000);
+    });
+  });
+</script>
+</body>
+</html>
