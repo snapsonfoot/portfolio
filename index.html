@@ -383,8 +383,7 @@ const PHOTOS = [
         item.className = 'gallery-item';
         item.innerHTML = `
           <img src="${photo.src}" alt="${photo.title}" loading="lazy" />
-          <div class="caption">${photo.category}</div>
-        `;
+
         item.addEventListener('click', () => openLightbox(i));
         colEls[i % numCols].appendChild(item);
       });
