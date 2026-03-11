@@ -250,7 +250,7 @@
     }
 
     footer span {
-      font-size: 5rem;
+      font-size: 1rem;
       letter-spacing: 0.1em;
       color: var(--muted);
       text-transform: uppercase;
@@ -387,7 +387,7 @@ const PHOTOS = [
         item.addEventListener('click', () => openLightbox(i));
         colEls[i % numCols].appendChild(item);
       });
-    }
+    }›
 
     filtered = PHOTOS.filter(p => p.category === 'Color');
 renderGallery(filtered);
