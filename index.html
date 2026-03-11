@@ -408,6 +408,7 @@ const PHOTOS = [
 
     filtered = PHOTOS.filter(p => p.category === 'Color');
 renderGallery(filtered);
+document.querySelector('[data-filter="Color"]').classList.add('active');
 
 
     // Filter logic
