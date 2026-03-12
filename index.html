@@ -448,9 +448,8 @@
         colEls.push(col);
       }
 
-      // On smaller screens fall back to sequential distribution
-      // On full 3-col layout, use explicit col assignments
-      photos.forEach((photo, i) => {
+      // Build items array first (preserving original index for lightbox)
+      const items = photos.map((photo, i) => {
         const item = document.createElement('div');
         item.className = 'gallery-item';
 
@@ -463,13 +462,28 @@
         item.appendChild(img);
 
         item.addEventListener('click', () => openLightbox(i));
-
-        if (numCols === 3 && photo.col) {
-          colEls[photo.col - 1].appendChild(item);
-        } else {
-          colEls[i % numCols].appendChild(item);
-        }
+        return { item, photo };
       });
+
+      if (numCols === 3) {
+        // Full desktop: use explicit col assignments
+        items.forEach(({ item, photo }) => {
+          colEls[photo.col - 1].appendChild(item);
+        });
+      } else if (numCols === 1) {
+        // Mobile: interleave by column — col1[0], col2[0], col3[0], col1[1], col2[1]...
+        const byCol = { 1: [], 2: [], 3: [] };
+        items.forEach(({ item, photo }) => byCol[photo.col || 1].push(item));
+        const maxLen = Math.max(byCol[1].length, byCol[2].length, byCol[3].length);
+        for (let r = 0; r < maxLen; r++) {
+          [1, 2, 3].forEach(c => {
+            if (byCol[c][r]) colEls[0].appendChild(byCol[c][r]);
+          });
+        }
+      } else {
+        // 2-col tablet: sequential distribution
+        items.forEach(({ item }, i) => colEls[i % 2].appendChild(item));
+      }
     }
 
     filtered = PHOTOS.filter(p => p.category === 'Color');
