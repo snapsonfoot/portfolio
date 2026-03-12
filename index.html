@@ -144,13 +144,20 @@
       position: relative;
       display: block;
     }
+    
+.gallery-item img {
+  width: 100%;
+  display: block;
+  transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              filter 0.4s ease,
+              opacity 0.4s ease;
+  filter: brightness(1);
+  opacity: 0;
+}
 
-    .gallery-item img {
-      width: 100%;
-      display: block;
-      transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                  filter 0.4s ease;
-      filter: brightness(1);
+.gallery-item img.loaded {
+  opacity: 1;
+}
     }
 
     .gallery-item:hover img {
@@ -405,9 +412,14 @@ const PHOTOS = [
       photos.forEach((photo, i) => {
         const item = document.createElement('div');
         item.className = 'gallery-item';
-        item.innerHTML = `
-          <img src="${photo.src}" alt="${photo.title}" loading="lazy" />
-`;
+
+const img = document.createElement('img');
+img.src = photo.src;
+img.alt = photo.title;
+img.loading = 'lazy';
+img.onload = () => img.classList.add('loaded');
+item.appendChild(img);
+
         item.addEventListener('click', () => openLightbox(i));
         colEls[i % numCols].appendChild(item);
       });
