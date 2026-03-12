@@ -151,10 +151,9 @@
       display: block;
       transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                   filter 0.4s ease,
-                  opacity 1.2s ease-in;
+                  opacity 1.2s ease;
       filter: brightness(1);
       opacity: 0;
-      will-change: opacity;
     }
 
     .gallery-item img.loaded {
@@ -250,6 +249,44 @@
       display: block;
     }
 
+    /* ── LIGHTBOX INFO BUTTON ── */
+    #lightbox-info-btn {
+      position: absolute;
+      bottom: 28px;
+      left: 36px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      z-index: 101;
+      transition: color 0.2s;
+      display: none;
+    }
+    #lightbox-info-btn:hover { color: var(--text); }
+    #lightbox-info-btn.visible { display: inline-block; }
+
+    #lightbox-info-label {
+      position: absolute;
+      bottom: 28px;
+      left: 58px;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      z-index: 101;
+    }
+    #lightbox-info-label.open {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
     /* ── FOOTER ── */
     footer {
       border-top: 1px solid #e4e2de;
@@ -318,6 +355,8 @@
       <span id="lightbox-title"></span>
       <span id="lightbox-counter"></span>
     </div>
+    <button id="lightbox-info-btn" aria-label="Camera info">ⓘ</button>
+    <span id="lightbox-info-label"></span>
   </div>
 
   <!-- FOOTER -->
@@ -332,40 +371,40 @@
     //  col: 1, 2, or 3 — which column this photo appears in
     //  Use the Photo Arranger to manage order and columns visually
     // ═══════════════════════════════════════════════
-  const PHOTOS = [
-  { src: "images/6717-7934.jpeg", title: "6717 7934", category: "Color", col: 1 },
-  { src: "images/8492-f-6162.jpeg", title: "8492 F 6162", category: "Color", col: 1 },
-  { src: "images/3951-k-4922.jpeg", title: "3951 K 4922", category: "Color", col: 1 },
-  { src: "images/1495-k-2248.jpeg", title: "1495 K 2248", category: "Color", col: 1 },
-  { src: "images/8493-p-6121.jpeg", title: "8493 P 6121", category: "Color", col: 1 },
-  { src: "images/5531-f-0883.jpeg", title: "5531 F 0883", category: "Color", col: 1 },
-  { src: "images/5532-k-0765.jpeg", title: "5532 K 0765", category: "Color", col: 1 },
-  { src: "images/3951-k-4920.jpeg", title: "3951 K 4920", category: "Color", col: 1 },
-  { src: "images/3951-k-4905.jpeg", title: "3951 K 4905", category: "Color", col: 1 },
-  { src: "images/7210-gold-2276.jpeg", title: "7210 Gold 2276", category: "Color", col: 2 },
-  { src: "images/6717-7912.jpeg", title: "6717 7912", category: "Color", col: 2 },
-  { src: "images/5531-f-0878.jpeg", title: "5531 F 0878", category: "Color", col: 2 },
-  { src: "images/8492-f-6167.jpeg", title: "8492 F 6167", category: "Color", col: 2 },
-  { src: "images/5532-k-0769.jpeg", title: "5532 K 0769", category: "Color", col: 2 },
-  { src: "images/img_5774.jpeg", title: "Img 5774", category: "Color", col: 2 },
-  { src: "images/img_7082.jpeg", title: "Img 7082", category: "Color", col: 2 },
-  { src: "images/8492-f-6163 (1).jpeg", title: "8492 F 6163 (1)", category: "Color", col: 3 },
-  { src: "images/1495-k-2236.jpeg", title: "1495 K 2236", category: "Color", col: 3 },
-  { src: "images/5531-f-0881.jpeg", title: "5531 F 0881", category: "Color", col: 3 },
-  { src: "images/6717-7917.jpeg", title: "6717 7917", category: "Color", col: 3 },
-  { src: "images/img_6237.jpeg", title: "Img 6237", category: "Color", col: 3 },
-  { src: "images/5531-f-0885.jpeg", title: "5531 F 0885", category: "Color", col: 3 },
-  { src: "images/img_6009.jpeg", title: "Img 6009", category: "Color", col: 3 },
-  { src: "images/img_6256.jpeg", title: "Img 6256", category: "Color", col: 3 },
-  { src: "images/3297-phoenix-4053.jpeg", title: "3297 Phoenix 4053", category: "Color", col: 3 },
-  { src: "images/8979-8130.jpeg", title: "8979 8130", category: "B&W", col: 1 },
-  { src: "images/IMG_6247.jpeg", title: "IMG 6247", category: "B&W", col: 1 },
-  { src: "images/8979-8135.jpeg", title: "8979 8135", category: "B&W", col: 2 },
-  { src: "images/8979-8111.jpeg", title: "8979 8111", category: "B&W", col: 2 },
-  { src: "images/img_6261.jpeg", title: "Img 6261", category: "B&W", col: 2 },
-  { src: "images/IMG_6246.jpeg", title: "IMG 6246", category: "B&W", col: 3 },
-  { src: "images/8979-8105.jpeg", title: "8979 8105", category: "B&W", col: 3 }
-];
+    const PHOTOS = [
+      { src: "images/6717-7934.jpeg",        title: "6717 7934",        category: "Color", col: 1 },
+      { src: "images/7210-gold-2276.jpeg",   title: "7210 Gold 2276",   category: "Color", col: 2 },
+      { src: "images/8492-f-6163 (1).jpeg",  title: "8492 F 6163 (1)", category: "Color", col: 3 },
+      { src: "images/8492-f-6162.jpeg",      title: "8492 F 6162",      category: "Color", col: 1 },
+      { src: "images/6717-7912.jpeg",        title: "6717 7912",        category: "Color", col: 2 },
+      { src: "images/1495-k-2236.jpeg",      title: "1495 K 2236",      category: "Color", col: 3 },
+      { src: "images/3951-k-4922.jpeg",      title: "3951 K 4922",      category: "Color", col: 1 },
+      { src: "images/5531-f-0878.jpeg",      title: "5531 F 0878",      category: "Color", col: 2 },
+      { src: "images/5531-f-0881.jpeg",      title: "5531 F 0881",      category: "Color", col: 3 },
+      { src: "images/1495-k-2248.jpeg",      title: "1495 K 2248",      category: "Color", col: 1 },
+      { src: "images/8492-f-6167.jpeg",      title: "8492 F 6167",      category: "Color", col: 2 },
+      { src: "images/6717-7917.jpeg",        title: "6717 7917",        category: "Color", col: 3 },
+      { src: "images/8493-p-6121.jpeg",      title: "8493 P 6121",      category: "Color", col: 1 },
+      { src: "images/5532-k-0769.jpeg",      title: "5532 K 0769",      category: "Color", col: 2 },
+      { src: "images/img_6237.jpeg",         title: "Img 6237",         category: "Color", col: 3 },
+      { src: "images/5531-f-0883.jpeg",      title: "5531 F 0883",      category: "Color", col: 1 },
+      { src: "images/img_5774.jpeg",         title: "Img 5774",         category: "Color", col: 2 },
+      { src: "images/5531-f-0885.jpeg",      title: "5531 F 0885",      category: "Color", col: 3 },
+      { src: "images/5532-k-0765.jpeg",      title: "5532 K 0765",      category: "Color", col: 1 },
+      { src: "images/3297-phoenix-4053.jpeg",title: "3297 Phoenix 4053",category: "Color", col: 2 },
+      { src: "images/img_6009.jpeg",         title: "Img 6009",         category: "Color", col: 3 },
+      { src: "images/3951-k-4920.jpeg",      title: "3951 K 4920",      category: "Color", col: 1 },
+      { src: "images/img_7082.jpeg",         title: "Img 7082",         category: "Color", col: 2 },
+      { src: "images/img_6256.jpeg",         title: "Img 6256",         category: "Color", col: 3 },
+      { src: "images/3951-k-4905.jpeg",      title: "3951 K 4905",      category: "Color", col: 1 },
+      { src: "images/img_6261.jpeg",         title: "Img 6261",         category: "B&W",   col: 1 },
+      { src: "images/IMG_6247.jpeg",         title: "IMG 6247",         category: "B&W",   col: 2 },
+      { src: "images/8979-8111.jpeg",        title: "8979 8111",        category: "B&W",   col: 3 },
+      { src: "images/8979-8130.jpeg",        title: "8979 8130",        category: "B&W",   col: 1 },
+      { src: "images/8979-8135.jpeg",        title: "8979 8135",        category: "B&W",   col: 2 },
+      { src: "images/8979-8105.jpeg",        title: "8979 8105",        category: "B&W",   col: 3 }
+    ];
+
     // ═══════════════════════════════════════════════
     //  Everything below runs automatically
     // ═══════════════════════════════════════════════
@@ -439,10 +478,12 @@
     });
 
     // Lightbox
-    const lightbox  = document.getElementById('lightbox');
-    const lbImg     = document.getElementById('lightbox-img');
-    const lbTitle   = document.getElementById('lightbox-title');
-    const lbCounter = document.getElementById('lightbox-counter');
+    const lightbox     = document.getElementById('lightbox');
+    const lbImg        = document.getElementById('lightbox-img');
+    const lbTitle      = document.getElementById('lightbox-title');
+    const lbCounter    = document.getElementById('lightbox-counter');
+    const lbInfoBtn    = document.getElementById('lightbox-info-btn');
+    const lbInfoLabel  = document.getElementById('lightbox-info-label');
 
     function openLightbox(index) {
       currentIndex = index;
@@ -463,13 +504,25 @@
       lbTitle.textContent = photo.title;
       lbCounter.textContent = `${currentIndex + 1} / ${filtered.length}`;
 
+      // Info button — show only if camera or film data exists
+      const hasInfo = (photo.camera || photo.film);
+      lbInfoBtn.classList.toggle('visible', !!hasInfo);
+      lbInfoLabel.classList.remove('open');
+      if (hasInfo) {
+        const parts = [photo.camera, photo.film].filter(Boolean);
+        lbInfoLabel.textContent = parts.join(' · ');
+      }
+
       const imgEl = document.getElementById('lightbox-img');
       imgEl.onload = () => {
         const meta = document.getElementById('lightbox-meta');
         const imgBottom = imgEl.getBoundingClientRect().bottom;
         const viewHeight = window.innerHeight;
         const spaceBelow = viewHeight - imgBottom;
-        meta.style.bottom = Math.max(12, spaceBelow / 2 - 20) + 'px';
+        const bottomPos = Math.max(12, spaceBelow / 2 - 20) + 'px';
+        meta.style.bottom = bottomPos;
+        lbInfoBtn.style.bottom = bottomPos;
+        lbInfoLabel.style.bottom = bottomPos;
       };
     }
 
@@ -487,6 +540,11 @@
     document.getElementById('lightbox-prev').addEventListener('click', e => { e.stopPropagation(); prevPhoto(); });
     document.getElementById('lightbox-next').addEventListener('click', e => { e.stopPropagation(); nextPhoto(); });
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+    lbInfoBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      lbInfoLabel.classList.toggle('open');
+    });
 
     document.addEventListener('keydown', e => {
       if (!lightbox.classList.contains('open')) return;
