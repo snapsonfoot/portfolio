@@ -73,7 +73,7 @@
     .hero h1 {
       font-family: 'Cormorant Garamond', serif;
       font-weight: 300;
-      font-size: clamp(2.4rem, 5vw, 4.2rem);
+      font-size: clamp(1.9rem, 5vw, 3.4rem);
       line-height: 1.1;
       letter-spacing: -0.01em;
       max-width: 600px;
@@ -100,7 +100,7 @@
       background: none;
       border: none;
       font-family: 'Jost', sans-serif;
-      font-size: 1.4rem;
+      font-size: 0.9rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--muted);
@@ -380,42 +380,40 @@
     //  col: 1, 2, or 3 — which column this photo appears in
     //  Use the Photo Arranger to manage order and columns visually
     // ═══════════════════════════════════════════════
-    const PHOTOS = [
-  { src: "images/6717-7934.jpeg", title: "6717 7934", category: "Color", col: 1 },
-  { src: "images/8492-f-6162.jpeg", title: "8492 F 6162", category: "Color", col: 1 },
-  { src: "images/3951-k-4922.jpeg", title: "3951 K 4922", category: "Color", col: 1 },
-  { src: "images/1495-k-2248.jpeg", title: "1495 K 2248", category: "Color", col: 1 },
-  { src: "images/8493-p-6121.jpeg", title: "8493 P 6121", category: "Color", col: 1 },
-  { src: "images/5531-f-0883.jpeg", title: "5531 F 0883", category: "Color", col: 1 },
-  { src: "images/5532-k-0765.jpeg", title: "5532 K 0765", category: "Color", col: 1 },
-  { src: "images/3951-k-4920.jpeg", title: "3951 K 4920", category: "Color", col: 1 },
-  { src: "images/3951-k-4905.jpeg", title: "3951 K 4905", category: "Color", col: 1 },
-  { src: "images/5532-k-0747.jpeg", title: "5532 K 0747", category: "Color", col: 1 },
-  { src: "images/7210-gold-2276.jpeg", title: "7210 Gold 2276", category: "Color", col: 2 },
-  { src: "images/6717-7912.jpeg", title: "6717 7912", category: "Color", col: 2 },
-  { src: "images/5531-f-0878.jpeg", title: "5531 F 0878", category: "Color", col: 2 },
-  { src: "images/8492-f-6167.jpeg", title: "8492 F 6167", category: "Color", col: 2 },
-  { src: "images/5532-k-0769.jpeg", title: "5532 K 0769", category: "Color", col: 2 },
-  { src: "images/img_5774.jpeg", title: "Img 5774", category: "Color", col: 2 },
-  { src: "images/img_7082.jpeg", title: "Img 7082", category: "Color", col: 2 },
-  { src: "images/8492-f-6163 (1).jpeg", title: "8492 F 6163 (1)", category: "Color", col: 3 },
+   const PHOTOS = [
+  { src: "images/6717-7934.jpeg", title: "6717 7934", category: "Color", col: 1, camera: "Olympus XA", film: "Kodak Ultramax 400" },
+  { src: "images/8492-f-6162.jpeg", title: "8492 F 6162", category: "Color", col: 1, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/3951-k-4922.jpeg", title: "3951 K 4922", category: "Color", col: 1, camera: "Minolta Hi-Matic F", film: "Kodak Ektar 100" },
+  { src: "images/1495-k-2248.jpeg", title: "1495 K 2248", category: "Color", col: 1, camera: "Canonet QL17 GIII", film: "Kodak Gold 200" },
+  { src: "images/8493-p-6121.jpeg", title: "8493 P 6121", category: "Color", col: 1, camera: "Olympus XA", film: "Kodak Portra 400" },
+  { src: "images/5531-f-0883.jpeg", title: "5531 F 0883", category: "Color", col: 1, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/5532-k-0765.jpeg", title: "5532 K 0765", category: "Color", col: 1, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/3951-k-4920.jpeg", title: "3951 K 4920", category: "Color", col: 1, camera: "Minolta Hi-Matic F", film: "Kodak Ektar 100" },
+  { src: "images/3951-k-4905.jpeg", title: "3951 K 4905", category: "Color", col: 1, camera: "Minolta Hi-Matic F", film: "Kodak Ektar 100" },
+  { src: "images/5532-k-0747.jpeg", title: "5532 K 0747", category: "Color", col: 1, camera: "Canonet QL17 GIII", film: "Kodak Ultramax 400" },
+  { src: "images/7210-gold-2276.jpeg", title: "7210 Gold 2276", category: "Color", col: 2, camera: "Olympus XA", film: "Kodak Gold 200" },
+  { src: "images/6717-7912.jpeg", title: "6717 7912", category: "Color", col: 2, camera: "Olympus XA", film: "Kodak Ultramax 400" },
+  { src: "images/5531-f-0878.jpeg", title: "5531 F 0878", category: "Color", col: 2, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/8492-f-6167.jpeg", title: "8492 F 6167", category: "Color", col: 2, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/5532-k-0769.jpeg", title: "5532 K 0769", category: "Color", col: 2, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/img_5774.jpeg", title: "Img 5774", category: "Color", col: 2, camera: "Minolta Hi-Matic F", film: "Kodak Ultramax 400" },
+  { src: "images/img_7082.jpeg", title: "Img 7082", category: "Color", col: 2, camera: "Canonet QL17 GIII", film: "Kodak Ultramax 400" },
+  { src: "images/8492-f-6163 (1).jpeg", title: "8492 F 6163 (1)", category: "Color", col: 3, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
   { src: "images/1495-k-2236.jpeg", title: "1495 K 2236", category: "Color", col: 3, camera: "Minolta Hi-Matic F", film: "Kodak Ultramax 400" },
-  { src: "images/5531-f-0881.jpeg", title: "5531 F 0881", category: "Color", col: 3 },
-  { src: "images/6717-7917.jpeg", title: "6717 7917", category: "Color", col: 3 },
-  { src: "images/img_6237.jpeg", title: "Img 6237", category: "Color", col: 3 },
-  { src: "images/5531-f-0885.jpeg", title: "5531 F 0885", category: "Color", col: 3 },
-  { src: "images/img_6009.jpeg", title: "Img 6009", category: "Color", col: 3 },
-  { src: "images/img_6256.jpeg", title: "Img 6256", category: "Color", col: 3 },
-  { src: "images/3297-phoenix-4053.jpeg", title: "3297 Phoenix 4053", category: "Color", col: 3 },
-  { src: "images/8979-8130.jpeg", title: "8979 8130", category: "B&W", col: 1 },
-  { src: "images/IMG_6247.jpeg", title: "IMG 6247", category: "B&W", col: 1 },
-  { src: "images/8979-8135.jpeg", title: "8979 8135", category: "B&W", col: 2 },
-  { src: "images/8979-8111.jpeg", title: "8979 8111", category: "B&W", col: 2 },
-  { src: "images/img_6261.jpeg", title: "Img 6261", category: "B&W", col: 2 },
-  { src: "images/IMG_6246.jpeg", title: "IMG 6246", category: "B&W", col: 3 },
-  { src: "images/8979-8105.jpeg", title: "8979 8105", category: "B&W", col: 3 }
+  { src: "images/5531-f-0881.jpeg", title: "5531 F 0881", category: "Color", col: 3, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/6717-7917.jpeg", title: "6717 7917", category: "Color", col: 3, camera: "Olympus XA", film: "Kodak Ultramax 400" },
+  { src: "images/img_6237.jpeg", title: "Img 6237", category: "Color", col: 3, camera: "Minolta Hi-Matic F", film: "Kodak Ultramax 400" },
+  { src: "images/5531-f-0885.jpeg", title: "5531 F 0885", category: "Color", col: 3, camera: "Canonet QL17 GIII", film: "Fujicolor 200" },
+  { src: "images/img_6009.jpeg", title: "Img 6009", category: "Color", col: 3, camera: "Minolta Hi-Matic F", film: "Fujifilm 400" },
+  { src: "images/img_6256.jpeg", title: "Img 6256", category: "Color", col: 3, camera: "Minolta Hi-Matic F", film: "Kodak Ultramax 400" },
+  { src: "images/3297-phoenix-4053.jpeg", title: "3297 Phoenix 4053", category: "Color", col: 3, camera: "Canonet QL17 GIII", film: "Harman Phoenix II 200" },
+  { src: "images/8979-8111.jpeg", title: "8979 8111", category: "B&W", col: 1, camera: "Olympus XA", film: "Ilford HP5+" },
+  { src: "images/img_6261.jpeg", title: "Img 6261", category: "B&W", col: 1, camera: "Minolta Hi-Matic F" },
+  { src: "images/IMG_6246.jpeg", title: "IMG 6246", category: "B&W", col: 2, camera: "Minolta Hi-Matic F" },
+  { src: "images/8979-8105.jpeg", title: "8979 8105", category: "B&W", col: 2, camera: "Olympus XA", film: "Ilford HP5+" },
+  { src: "images/8979-8135.jpeg", title: "8979 8135", category: "B&W", col: 3, camera: "Olympus XA", film: "Ilford HP5+" },
+  { src: "images/8979-8130.jpeg", title: "8979 8130", category: "B&W", col: 3, camera: "Olympus XA", film: "Ilford HP5+" }
 ];
-
     // ═══════════════════════════════════════════════
     //  Everything below runs automatically
     // ═══════════════════════════════════════════════
@@ -532,7 +530,7 @@
       // Info button — show only if camera or film data exists
       const hasInfo = (photo.camera || photo.film);
       lbInfoBtn.classList.toggle('visible', !!hasInfo);
-      lbInfoLabel.classList.remove('open');
+      lbInfoLabel.classList.add('open');
       if (hasInfo) {
         const parts = [photo.camera, photo.film].filter(Boolean);
         lbInfoLabel.textContent = parts.join(' · ');
