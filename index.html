@@ -517,7 +517,7 @@
       // Info button — show only if camera or film data exists
       const hasInfo = (photo.camera || photo.film);
       lbInfoBtn.classList.toggle('visible', !!hasInfo);
-      lbInfoLabel.classList.remove('open');
+      lbInfoLabel.classList.add('open');
       if (hasInfo) {
         const parts = [photo.camera, photo.film].filter(Boolean);
         lbInfoLabel.textContent = parts.join(' · ');
