@@ -123,6 +123,12 @@
     .list-row .row-remove { flex-shrink: 0; width: 22px; height: 22px; background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.15s, color 0.15s; }
     .list-row .row-remove:hover { background: #f0eeea; color: #b03030; }
 
+    /* meta fields in list view */
+    .list-row .row-meta { display: flex; gap: 8px; flex-shrink: 0; }
+    .list-row .meta-input { font-family: 'Jost', sans-serif; font-size: 0.68rem; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 4px 8px; outline: none; width: 160px; }
+    .list-row .meta-input::placeholder { color: var(--muted); font-style: italic; }
+    .list-row .meta-input:focus { border-color: var(--accent); }
+
     #outputPanel { display: none; margin-top: 40px; border: 1px solid var(--border); background: var(--panel); }
     #outputPanel.visible { display: block; }
     .output-header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
@@ -332,7 +338,7 @@
           const filename = entry.src.replace(/^images\//, '');
           const cat = entry.category === 'B&W' ? 'B&W' : 'Color';
           const col = entry.col || ((i % 3) + 1);
-          preloadMap[filename] = { collection: cat, col, index: i };
+          preloadMap[filename] = { collection: cat, col, index: i, camera: entry.camera || '', film: entry.film || '' };
         }
       });
       applyPreloadOrder();
@@ -348,22 +354,7 @@
 
   function applyPreloadOrder() {
     if (!preloadMap) return;
-    // Reset collections
-    ['Color', 'B&W'].forEach(cat => { collections[cat] = { 1: [], 2: [], 3: [] }; });
-    // Re-route all loaded photos
-    ['Color', 'B&W'].forEach(cat => {
-      [1, 2, 3].forEach(c => {
-        // photos already loaded into collections before preload
-      });
-    });
-    // Actually rebuild from preloadMap entries that have photos loaded
-    const allLoaded = [];
-    ['Color', 'B&W'].forEach(cat => {
-      [1, 2, 3].forEach(c => {
-        // gather any already-loaded photos
-      });
-    });
-    // Simpler: iterate preloadMap in index order, find photo in flat pool
+    // Build flat pool BEFORE resetting
     const flatPool = {};
     ['Color', 'B&W'].forEach(cat => {
       [1, 2, 3].forEach(c => {
@@ -372,7 +363,7 @@
     });
     // Reset
     ['Color', 'B&W'].forEach(cat => { collections[cat] = { 1: [], 2: [], 3: [] }; });
-    // Re-insert in preloadMap order
+    // Re-insert in preloadMap order with correct col and collection
     const entries = Object.entries(preloadMap).sort((a, b) => a[1].index - b[1].index);
     entries.forEach(([filename, info]) => {
       const photo = flatPool[filename];
@@ -380,6 +371,13 @@
         photo.col = info.col;
         collections[info.collection][info.col].push(photo);
       }
+    });
+    // Any photos not in preloadMap go into col 1 of active collection
+    Object.values(flatPool).forEach(photo => {
+      const placed = ['Color', 'B&W'].some(cat =>
+        [1, 2, 3].some(c => collections[cat][c].includes(photo))
+      );
+      if (!placed) collections[activeCollection][1].push(photo);
     });
   }
 
@@ -426,6 +424,8 @@
         if (preloadMap && preloadMap[file.name]) {
           const info = preloadMap[file.name];
           photo.col = info.col;
+          photo.camera = info.camera || '';
+          photo.film = info.film || '';
           const targetCat = info.collection;
           const targetCol = info.col;
           if (!collections[targetCat][targetCol].find(p => p.filename === file.name))
@@ -648,8 +648,31 @@
         outputPanel.classList.remove('visible'); howTo.style.display = 'none';
       });
 
+      // Camera & film inputs
+      const metaWrap = document.createElement('div');
+      metaWrap.className = 'row-meta';
+
+      const cameraInput = document.createElement('input');
+      cameraInput.type = 'text';
+      cameraInput.className = 'meta-input';
+      cameraInput.placeholder = 'Camera';
+      cameraInput.value = photo.camera || '';
+      cameraInput.addEventListener('mousedown', e => e.stopPropagation());
+      cameraInput.addEventListener('input', () => { photo.camera = cameraInput.value; });
+
+      const filmInput = document.createElement('input');
+      filmInput.type = 'text';
+      filmInput.className = 'meta-input';
+      filmInput.placeholder = 'Film';
+      filmInput.value = photo.film || '';
+      filmInput.addEventListener('mousedown', e => e.stopPropagation());
+      filmInput.addEventListener('input', () => { photo.film = filmInput.value; });
+
+      metaWrap.appendChild(cameraInput);
+      metaWrap.appendChild(filmInput);
+
       row.appendChild(handle); row.appendChild(numEl); row.appendChild(img);
-      row.appendChild(name); row.appendChild(colSel); row.appendChild(removeBtn);
+      row.appendChild(name); row.appendChild(metaWrap); row.appendChild(colSel); row.appendChild(removeBtn);
 
       // List drag — reorders within same column only
       row.addEventListener('dragstart', onListDragStart);
@@ -750,7 +773,9 @@
     ['Color', 'B&W'].forEach(cat => {
       [1, 2, 3].forEach(colNum => {
         collections[cat][colNum].forEach(p => {
-          lines.push(`  { src: "images/${p.filename}", title: "${titleFromFilename(p.filename)}", category: "${cat}", col: ${colNum} }`);
+          const camPart  = p.camera ? ', camera: "' + p.camera + '"' : '';
+          const filmPart = p.film   ? ', film: "'   + p.film   + '"' : '';
+          lines.push('  { src: "images/' + p.filename + '", title: "' + titleFromFilename(p.filename) + '", category: "' + cat + '", col: ' + colNum + camPart + filmPart + ' }');
         });
       });
     });
